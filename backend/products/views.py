@@ -3,9 +3,11 @@ from rest_framework import generics,authentication,permissions
 
 from .models import Product
 from .serializers import ProductSerializer
-from api.mixins import StaffEditorPermissionMixin
-
-class ProductListCreateAPIView(StaffEditorPermissionMixin,generics.ListCreateAPIView):
+from api.mixins import StaffEditorPermissionMixin ,UserQuerySetMixin
+from api.permissions import IsStaffEditorPermission
+class ProductListCreateAPIView(
+    UserQuerySetMixin,
+    IsStaffEditorPermission,generics.ListCreateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
@@ -20,7 +22,16 @@ class ProductListCreateAPIView(StaffEditorPermissionMixin,generics.ListCreateAPI
         content = serializer.validated_data.get('content')  or None
         if content is None:
             content = title
-        serializer.save(content=content)
+        serializer.save(user=self.request.user,content=content)
+    
+    # def get_queryset(self , *args , **kwargs):
+    #     qs = super().get_queryset(*args , **kwargs)
+    #     request = self.request
+    #     user = request.user
+    #     if user.is_authenticated:
+    #         return Product.objects.none( )
+    #     print(request.user)
+    #     return qs.filter(user=request.user )
 
 
 product_list_create_view = ProductListCreateAPIView.as_view()
